@@ -1,11 +1,10 @@
 package app
 
 import "appengine"
-import "appengine/datastore"
 import "fmt"
-import "strings"
 import "net/http"
-import "regexp"
+import "crypto/sha256"
+import "encoding/hex"
 
 const maximumContentLength = 4
 
@@ -44,7 +43,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
   ensure := func(condition bool, errorCode int) {
     if !condition {
-      status = statusCode(errorCode)
+      status = status_t(errorCode)
       panic("ensure condition false")
     }
   }
@@ -63,18 +62,19 @@ func handler(w http.ResponseWriter, r *http.Request) {
   ensure(match != nil, http.StatusForbidden)
 
   if get {
-    pointer, e := getData(match.hash())
+    pointer, e := fetch(c, match.hash())
     check(e)
     ensure(pointer != nil, http.StatusNotFound)
-    body = pointer
+    body = new(string)
+    *body = string(*pointer)
   } else {
     ensure(match.extension() == "", http.StatusForbidden)
     ensure(r.ContentLength >= 0, http.StatusLengthRequired)
     ensure(r.ContentLength <= maximumContentLength, http.StatusRequestEntityTooLarge)
     buffer := make([]byte, r.ContentLength)
-    n, e := r.Body.Read(r.ContentLength)
+    n, e := r.Body.Read(buffer)
     check(e)
-    ensure(n == r.ContentLength, http.StatusInternalError)
+    ensure(int64(n) == r.ContentLength, http.StatusInternalServerError)
 
     sha := sha256.New()
     sha.Write(buffer)
@@ -82,10 +82,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
     calculatedHash := hex.EncodeToString(sum)
     ensure(calculatedHash == match.hash(), http.StatusForbidden)
 
-    if published(match.hash()) {
-      status = http.StausOK
+    p, e := published(c, match.hash())
+    check(e)
+    if p {
+      status = http.StatusOK
     } else {
-      check(publish(match.hash(), buffer))
       status = http.StatusCreated
     }
   }
