@@ -1,0 +1,12 @@
+application: rodarmor-publish
+version:     1
+runtime:     go
+api_version: go1
+
+handlers:
+- url: /$
+  static_files: index.txt
+  upload: index.txt
+
+- url: /[0-9a-fA-F]{64}([.][0-9a-zA-Z_.-]+)?$
+  script: _go_app
