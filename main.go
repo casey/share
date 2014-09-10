@@ -7,7 +7,7 @@ import "strings"
 import "net/http"
 import "regexp"
 
-var path_re = regexp.MustCompile(`^/([0-9a-fA-F]{64})([.][0-9a-zA-Z_.-]+)?$`)
+const maximumContentLength = 4
 
 func init() {
   http.HandleFunc("/", handler)
@@ -15,9 +15,10 @@ func init() {
 
 func handler(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
-  status := statusCode(http.StatusInternalServerError)
-  body := ""
+  status := status_t(http.StatusInternalServerError)
+  var body *string
   headers := make(map[string]string)
+  headers["License"] = "Anyone may do anything with this."
   headers["Warranty"] = `THIS IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND EXPRESS OR IMPLIED.`
   headers["Content-Type"] = `text/plain; charset="utf-8"`
 
@@ -34,10 +35,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
     if status.mustNotIncludeMessageBody(r.Method) {
       fmt.Fprint(w, "\n")
-    } else if body == "" {
+    } else if body == nil {
       fmt.Fprintf(w, "%v %v\n", status.number(), status.text())
     } else {
-      fmt.Fprintf(w, "%v", body)
+      fmt.Fprintf(w, "%v", *body)
     }
   }()
 
@@ -55,44 +56,37 @@ func handler(w http.ResponseWriter, r *http.Request) {
     }
   }
 
-  put := r.Method == "PUT"
   get := r.Method == "GET"
+  put := r.Method == "PUT"
   ensure(put || get, http.StatusMethodNotAllowed)
+  match := matchPath(r.URL.Path)
+  ensure(match != nil, http.StatusForbidden)
 
-  match := path_re.FindStringSubmatch(r.URL.Path)
-
-  ensure(len(match) >= 2, http.StatusForbidden)
-
-  key := strings.TrimPrefix(match[1], "/")
-  value := ""
-
-  if put {
-    ensure(len(match) == 3, http.StatusForbidden)
-    value = strings.TrimPrefix(match[2], "/")
-  }
-
-  check(datastore.RunInTransaction(c, func(c appengine.Context) error {
-    pointer, e := getValue(c, key)
+  if get {
+    pointer, e := getData(match.hash())
     check(e)
+    ensure(pointer != nil, http.StatusNotFound)
+    body = pointer
+  } else {
+    ensure(match.extension() == "", http.StatusForbidden)
+    ensure(r.ContentLength >= 0, http.StatusLengthRequired)
+    ensure(r.ContentLength <= maximumContentLength, http.StatusRequestEntityTooLarge)
+    buffer := make([]byte, r.ContentLength)
+    n, e := r.Body.Read(r.ContentLength)
+    check(e)
+    ensure(n == r.ContentLength, http.StatusInternalError)
 
-    if get {
-      ensure(pointer != nil, http.StatusNotFound)
-      status = http.StatusOK
-    } else if pointer == nil {
-      pointer, e = putValue(c, key, value)
-      check(e)
-      status = http.StatusCreated
+    sha := sha256.New()
+    sha.Write(buffer)
+    sum := sha.Sum(nil)
+    calculatedHash := hex.EncodeToString(sum)
+    ensure(calculatedHash == match.hash(), http.StatusForbidden)
+
+    if published(match.hash()) {
+      status = http.StausOK
     } else {
-      if *pointer == value {
-        status = http.StatusOK
-      } else {
-        status = http.StatusForbidden
-      }
+      check(publish(match.hash(), buffer))
+      status = http.StatusCreated
     }
-
-    value = *pointer
-    return nil
-  }, nil))
-
-  body = value + "\n"
+  }
 }

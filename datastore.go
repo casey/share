@@ -9,6 +9,19 @@ type entity struct {
   Data string `datastore:"data,noindex"`
 }
 
+func published(key string) bool {
+  return false
+}
+
+func publish(key string, string) bool {
+  return true
+}
+
+func getData(key string) (string*, error) {
+  return nil, nil
+}
+
+/*
 func stringID(key string) string {
   sha := sha256.New()
   sha.Write([]byte(key))
@@ -43,3 +56,4 @@ func putData(c appengine.Context, key string, data string) (*string, error) {
     return nil, e
   }
 }
+*/
