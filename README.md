@@ -1,9 +1,9 @@
-publish
-=======
+share
+=====
 
-A content-addressible storage service. Kind of works but not finished.
+Data sharing service. So broken right now.
 
-[Test instance here.](http://rodarmor-publish.appspot.com)
+[Test instance here.](http://rodarmor-share.appspot.com)
 
 
 API

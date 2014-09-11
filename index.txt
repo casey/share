@@ -1,3 +1,3 @@
-I'm publish!
+I'm share!
 
-github.com/casey/publish
+github.com/casey/share

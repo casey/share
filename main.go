@@ -69,9 +69,9 @@ func put(r *http.Request) {
   check(e)
   ensure(int64(n) == r.ContentLength, http.StatusInternalServerError)
   ensure(hashOK(match.hash(), buffer), http.StatusForbidden)
-  p, e := published(c, match.hash())
+  s, e := shared(c, match.hash())
   check(e)
-  ensure(p, http.StatusOK)
-  check(publish(c, match.hash(), buffer))
+  ensure(s, http.StatusOK)
+  check(share(c, match.hash(), buffer))
   empty(http.StatusCreated)
 }

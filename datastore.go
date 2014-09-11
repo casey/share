@@ -22,14 +22,14 @@ func makeDatastoreKey(c appengine.Context, key string) *datastore.Key {
   return datastore.NewKey(c, "data", key, 0, nil)
 }
 
-func published(c appengine.Context, key string) (bool, error) {
+func shared(c appengine.Context, key string) (bool, error) {
   datastoreKey := makeDatastoreKey(c, key)
   query := datastore.NewQuery("data").KeysOnly().Filter("__key__ =", datastoreKey)
   count, e := query.Count(c)
   return count > 0, e
 }
 
-func publish(c appengine.Context, key string, data []byte) error {
+func share(c appengine.Context, key string, data []byte) error {
   if !hashOK(key, data) {
     return errors.New("hash doesn't match")
   }
