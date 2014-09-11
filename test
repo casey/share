@@ -12,11 +12,6 @@ def die(msg):
 def ok(msg):
   sys.stdout.write("OK: %s\n" % msg)
 
-# generate some random data
-# generate the key
-# try to put it
-# try to get it
-
 def good_case():
   i = random.randint(0, maximumContentLength)
   b = os.urandom(i)
@@ -29,33 +24,12 @@ r.status_code == 200 or die('index not being served')
 ok('index retrieved')
 
 good_hex, good_bytes = good_case()
+url = "%s/%s" % (endpoint, good_hex)
 
-"""
-retrieved = r.text.strip()
+r = requests.put(url, data=good_bytes)
+r.status_code == 201 or die('put failed with status: %s (url: %s)' % (r.status_code, url))
+ok('put succeeded: %s' % url)
 
-if retrieved != 'Hello.From.WORM':
-  die('bad response for empty string: %s' % retrieved)
-ok('worm says: ' + retrieved)
-
-# test that new keys 404
-r = requests.get(get_url)
-r.status_code == 404 or die('get with new key returned status code: %s' % r.status_code)
-ok('get with new key 404ed as expected: %s' % get_url)
-
-r = requests.put(put_url)
-r.status_code == 201 or die('put with new key returned status code: %s' % r.status_code)
-ok('new key created successfully')
-retrieved = r.text.strip()
-
-if retrieved != value:
-  die('bad key retreived: %s' % retrieved)
-ok('new key retreival okay: %s' % retrieved)
-
-r = requests.get(get_url)
-r.status_code == 200 or die('tried to retrieve value but got status code: %s' % r.status_code)
-retrieved = r.text.strip()
-
-if retrieved != value:
-  die("retrieved value didn't match: %s" % retrieved)
-ok('retrieved key matches')
-"""
+r = requests.get(url)
+r.status_code == 200 or die('tried to get data but got status code: %s' % r.status_code)
+ok('get suceeeded')
