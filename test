@@ -23,13 +23,14 @@ r = requests.get(endpoint)
 r.status_code == 200 or die('index not being served')
 ok('index retrieved')
 
-good_hex, good_bytes = good_case()
-url = "%s/%s" % (endpoint, good_hex)
+for _ in range(10):
+  good_hex, good_bytes = good_case()
+  url = "%s/%s" % (endpoint, good_hex)
 
-r = requests.put(url, data=good_bytes)
-r.status_code == 201 or die('put failed with status: %s (url: %s)' % (r.status_code, url))
-ok('put succeeded: %s' % url)
+  r = requests.put(url, data=good_bytes)
+  r.status_code == 201 or die('put failed with status: %s (url: %s)' % (r.status_code, url))
+  ok('put succeeded: %s' % url)
 
-r = requests.get(url)
-r.status_code == 200 or die('tried to get data but got status code: %s' % r.status_code)
-ok('get suceeeded')
+  r = requests.get(url)
+  r.status_code == 200 or die('tried to get data but got status code: %s' % r.status_code)
+  ok('get suceeeded')

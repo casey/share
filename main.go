@@ -3,8 +3,6 @@ package app
 import "appengine"
 import "fmt"
 import "net/http"
-import "crypto/sha256"
-import "encoding/hex"
 
 const maximumContentLength = 128
 
@@ -14,21 +12,22 @@ func init() {
 
 func handler(w http.ResponseWriter, r *http.Request) {
   c := appengine.NewContext(r)
+  body := (*string)(nil)
   status := status_t(http.StatusInternalServerError)
-  var body *string
-  headers := make(map[string]string)
-  headers["License"] = "Anyone may do anything with this."
-  headers["Warranty"] = `THIS IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND EXPRESS OR IMPLIED.`
-  headers["Content-Type"] = `text/plain; charset="utf-8"`
+  contentType := `text/plain; charset="utf-8"`
 
   defer func() {
-    if e := recover(); e != nil {
-      c.Errorf("handler: recovered from panic: %v", e)
+    relic := recover()
+    
+    if relic == nil {
+      c.Errorf("handler: completed without response")
+    } else {
+      c.Infof("handler: completed normally")
     }
 
-    for name, value := range headers {
-      w.Header().Set(name, value)
-    }
+    w.Header().Set("License", "Anyone may do anything with this.")
+    w.Header().Set("Warranty", `THIS IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND EXPRESS OR IMPLIED.`)
+    w.Header().Set("Content-Type", contentType)
 
     w.WriteHeader(status.number())
 
@@ -50,9 +49,21 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
   check := func(e error) {
     if e != nil {
-      status = http.StatusInternalServerError
       panic(e)
     }
+  }
+
+  empty := func(s status_t) {
+    status = s
+    panic("response without body")
+  }
+
+  corporeal := func(s status_t, b string, ct string) {
+    status = s
+    body = new(string)
+    *body = b
+    contentType = ct
+    panic("response with body")
   }
 
   get := r.Method == "GET"
@@ -65,8 +76,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
     pointer, e := fetch(c, match.hash())
     check(e)
     ensure(pointer != nil, http.StatusNotFound)
-    body = new(string)
-    *body = string(*pointer)
+    corporeal(http.StatusOK, string(*pointer), "application/octet-stream")
   } else {
     ensure(match.extension() == "", http.StatusForbidden)
     ensure(r.ContentLength >= 0, http.StatusLengthRequired)
@@ -75,19 +85,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
     n, e := r.Body.Read(buffer)
     check(e)
     ensure(int64(n) == r.ContentLength, http.StatusInternalServerError)
-
-    sha := sha256.New()
-    sha.Write(buffer)
-    sum := sha.Sum(nil)
-    calculatedHash := hex.EncodeToString(sum)
-    ensure(calculatedHash == match.hash(), http.StatusForbidden)
-
-    p, e := published(c, match.hash())
+    ensure(hashOK(match.hash(), buffer), http.StatusForbidden)
+    p, e := published(c, match.hash());
     check(e)
     if p {
-      status = http.StatusOK
+      empty(http.StatusOK)
     } else {
-      status = http.StatusCreated
+      check(publish(c, match.hash(), buffer))
+      empty(http.StatusCreated)
     }
   }
 }

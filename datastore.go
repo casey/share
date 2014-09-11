@@ -2,9 +2,20 @@ package app
 
 import "appengine"
 import "appengine/datastore"
+import "crypto/sha256"
+import "encoding/hex"
+import "errors"
 
 type entity struct {
   Data []byte `datastore:"data,noindex"`
+}
+
+func hashOK(key string, data []byte) bool {
+  sha := sha256.New()
+  sha.Write(data)
+  sum := sha.Sum(nil)
+  calculatedHash := hex.EncodeToString(sum)
+  return calculatedHash == key;
 }
 
 func makeDatastoreKey(c appengine.Context, key string) *datastore.Key {
@@ -19,6 +30,10 @@ func published(c appengine.Context, key string) (bool, error) {
 }
 
 func publish(c appengine.Context, key string, data []byte) error {
+  if !hashOK(key, data) {
+    return errors.New("hash doesn't match")
+  }
+
   datastoreKey := makeDatastoreKey(c, key)
   entity := entity{data}
   _, e := datastore.Put(c, datastoreKey, &entity)
