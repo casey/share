@@ -1,14 +1,9 @@
 #!/usr/bin/env python3.3
 
-import sys, time, uuid, requests
+import sys, time, uuid, requests, os, random, hashlib
 
 endpoint = sys.argv[1]
-now      = time.time()
-key      = "test-key-" + uuid.uuid1().hex
-value    = "test-val-" + uuid.uuid1().hex
-get_url  = '%s/%s' % (endpoint, key)
-put_url  = '%s/%s/%s' % (endpoint, key, value)
-bad_put  = '%s/%s/BAD_VALUE' % (endpoint, key)
+maximumContentLength = 128
 
 def die(msg):
   sys.stdout.write("ERROR: %s\n" % msg)
@@ -17,8 +12,25 @@ def die(msg):
 def ok(msg):
   sys.stdout.write("OK: %s\n" % msg)
 
+# generate some random data
+# generate the key
+# try to put it
+# try to get it
+
+def good_case():
+  i = random.randint(0, maximumContentLength)
+  b = os.urandom(i)
+  sha = hashlib.sha256()
+  sha.update(b)
+  return sha.hexdigest(), b
+
 r = requests.get(endpoint)
-r.status_code == 200 or r.status_code == 201 or die('could not put the empty key')
+r.status_code == 200 or die('index not being served')
+ok('index retrieved')
+
+good_hex, good_bytes = good_case()
+
+"""
 retrieved = r.text.strip()
 
 if retrieved != 'Hello.From.WORM':
@@ -46,3 +58,4 @@ retrieved = r.text.strip()
 if retrieved != value:
   die("retrieved value didn't match: %s" % retrieved)
 ok('retrieved key matches')
+"""

@@ -6,7 +6,7 @@ import "net/http"
 import "crypto/sha256"
 import "encoding/hex"
 
-const maximumContentLength = 4
+const maximumContentLength = 128
 
 func init() {
   http.HandleFunc("/", handler)
