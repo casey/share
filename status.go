@@ -18,6 +18,14 @@ func (status status_t) mustNotIncludeMessageBody(method string) bool {
     status == http.StatusOK && method == "HEAD"
 }
 
+func (status status_t) mayIncludeMessageBody(method string) bool {
+  return !status.mustNotIncludeMessageBody(method)
+}
+
+func (status status_t) invalid() bool {
+  return status < 100 || status >= 600
+}
+
 func (status status_t) text() string {
   if text := http.StatusText(status.number()); text != "" {
     return text

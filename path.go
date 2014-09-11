@@ -1,9 +1,6 @@
 package app
 
-import "regexp"
 import "strings"
-
-var path_re = regexp.MustCompile(`^/([0-9a-f]{64})([.][0-9a-z_.-]+)?$`)
 
 type path_t []string
 
