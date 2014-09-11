@@ -1,9 +1,9 @@
 publish
 =======
 
-A content-addressible storage service. Coming soon!
+A content-addressible storage service. Kind of works but not finished.
 
-[Test instance here, eventually.](http://rodarmor-publish.appspot.com)
+[Test instance here.](http://rodarmor-publish.appspot.com)
 
 
 API
