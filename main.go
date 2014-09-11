@@ -18,7 +18,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
   defer func() {
     relic := recover()
-    
+
     if relic == nil {
       c.Errorf("handler: completed without response")
     } else {
@@ -86,7 +86,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
     check(e)
     ensure(int64(n) == r.ContentLength, http.StatusInternalServerError)
     ensure(hashOK(match.hash(), buffer), http.StatusForbidden)
-    p, e := published(c, match.hash());
+    p, e := published(c, match.hash())
     check(e)
     if p {
       empty(http.StatusOK)

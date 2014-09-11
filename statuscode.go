@@ -24,9 +24,12 @@ func (status status_t) text() string {
   }
 
   switch status {
-    case 420: return "Enhance Your Calm"
-    case 451: return "Unavailable For Legal Reasons"
-    case 522: return "Unprocessable Entity"
+  case 420:
+    return "Enhance Your Calm"
+  case 451:
+    return "Unavailable For Legal Reasons"
+  case 522:
+    return "Unprocessable Entity"
   }
 
   return "Mystery Status Code"

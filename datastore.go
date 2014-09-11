@@ -15,7 +15,7 @@ func hashOK(key string, data []byte) bool {
   sha.Write(data)
   sum := sha.Sum(nil)
   calculatedHash := hex.EncodeToString(sum)
-  return calculatedHash == key;
+  return calculatedHash == key
 }
 
 func makeDatastoreKey(c appengine.Context, key string) *datastore.Key {
