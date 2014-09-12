@@ -28,7 +28,7 @@ for _ in range(10):
   url = "%s/%s" % (endpoint, good_hex)
 
   r = requests.put(url, data=good_bytes)
-  r.status_code == 201 or die('put failed with status: %s (url: %s)' % (r.status_code, url))
+  r.status_code == 201 or r.status_code == 200 or die('put failed with status: %s (url: %s)' % (r.status_code, url))
   ok('put succeeded: %s' % url)
 
   r = requests.get(url)
