@@ -13,8 +13,8 @@ func (match path_t) hash() string {
 }
 
 func (match path_t) extension() string {
-  if len(match) == 2 {
-    return ""
+  if len(match) == 3 {
+    return match[2]
   }
-  return match[2]
+  return ""
 }

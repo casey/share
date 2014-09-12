@@ -12,51 +12,102 @@ def die(msg):
 def ok(msg):
   sys.stdout.write("OK: %s\n" % msg)
 
-def good_case():
-  i = random.randint(0, maximumContentLength)
-  b = os.urandom(i)
-  sha = hashlib.sha256()
-  sha.update(b)
-  return sha.hexdigest(), b
-
+# test index
 r = requests.get(endpoint)
 r.status_code == 200 or die('index not being served')
+"share" in r.text or die('served index looks weird: %s' % r.text)
 ok('index retrieved')
 
-created = 0
+# test random urls fail
+requests.get('%s/xyz' % endpoint).status_code == 404 or die('get /xyz worked')
+requests.put('%s/xyz' % endpoint).status_code == 404 or die('put /xyz worked')
 
-for _ in range(10):
-  good_hex, good_bytes = good_case()
-  url = "%s/%s" % (endpoint, good_hex)
+license = 'Anyone may do anything with this.'
 
-  r = requests.put(url, data=good_bytes)
-  if r.status_code == 201:
-    created += 1
-  r.status_code == 201 or r.status_code == 200 or die('put failed with status: %s (url: %s)' % (r.status_code, url))
-  ok('put succeeded: %s' % url)
+def check(r):
+  r.headers['Warranty'] == '"AS IS" WITH NO WARRANTY OF ANY KIND EXPRESS OR IMPLIED.' or die('check: warranty')
+  r.headers['License'] == license or die ('check: license')
+  r.headers['Access-Control-Allow-Origin'] == '*' or die('check: access control allow origin')
 
-  r = requests.get(url)
-  r.status_code == 200 or die('tried to get data but got status code: %s' % r.status_code)
-  ok('get suceeeded')
+class TestCase:
+  def __init__(_, *, length=None, ext='', good=True, license=license):
+    if length == None:
+      length = random.randint(8, maximumContentLength)
+    _.content = os.urandom(length)
+    sha = hashlib.sha256()
+    sha.update(_.content)
+    if not good:
+      sha.update(b'!')
+    _.key = sha.hexdigest()
+    _.ext = ext
+    _.license = license
+    _.good = good
 
-created > 0 or die('suspicious creation count: %s' % created)
+  def get(_):
+    r = requests.get("%s/%s%s" % (endpoint, _.key, _.ext))
+    check(r)
+    return r
 
-# test non-hash get and set are just ignored
-# test empty string get and set
-# test test too large
+  def put(_):
+    headers = {'License': _.license}
+    r = requests.put("%s/%s" % (endpoint, _.key), data=_.content, headers=headers)
+    check(r)
+    return r
+
 # test good
-# test not good
-# test without license
-# test some kind of content sniffing
-# test get with no ext is application/octet-stream
-# test get with .txt is text/plain utf8
-# test get with .html is html
-# this with .sniff is a GIF: '4749463839610100010000000021F904010A0001002C00000000010001000002024C01003B'
-# this with .sniff is text: 'hello'
+for i in range(5):
+  case = TestCase(length=0 if i == 0 else None) # test empty body at least once
+  r = case.put()
+  if i == 0:
+    r.status_code == 200 or die('put failed: %s: %s' % (r.status_code, r.url))
+  else:
+    r.status_code == 201 or die('put failed: %s' % r.status_code)
+  r = case.get()
+  r.status_code == 200 or die('get failed: %s' % r.status_code)
+  r.content == case.content or die('get got bad data')
+  ok('%s' % r.url)
 
-def case(*, length=None, ext='', good=True, data=None, license=True):
-  # too large not okay
-  # good always okay, not good not always okay
-  # warranty always served
-  # license always served
-  # access control allow origin always '*'
+# test bad checksum
+for _ in range(5):
+  case = TestCase(good=False, length=0 if i == 0 else None)
+  r = case.put()
+  r.status_code == 403 or die('bad put not 403: %s' % r.status_code)
+  r = case.get()
+  r.status_code == 404 or die('bad get not 404: %s' % r.status_code)
+  ok('bad checksum rejected')
+
+# test too long
+for _ in range(5):
+  case = TestCase(length=maximumContentLength + random.randint(1, 1000))
+  r = case.put()
+  r.status_code == 413 or die('long put not 413: %s' % r.status_code)
+  r = case.get()
+  r.status_code == 404 or die('bad get not 404: %s' % r.status_code)
+  ok('too much data rejected')
+
+# test bad license
+for _ in range(5):
+  case = TestCase(license="Some random conditions.")
+  r = case.put()
+  r.status_code == 403 or die('put with bad license not 403: %s' % r.status_code)
+  r = case.get()
+  r.status_code == 404 or die('bad get not 404: %s' % r.status_code)
+  ok('bad license rejected')
+
+extensions = {
+  '':       'application/octet-stream',
+  '.txt':   'text/plain; charset=utf-8',
+  '.png':   'image/png',
+  '.sniff': 'text/plain; charset=utf-8',
+}
+
+r = TestCase(length=0).put()
+r.status_code == 200 or r.status_code == 201 or die('put empty body failed')
+
+for ext, correct in extensions.items():
+  case = TestCase(ext=ext, length=0)
+  r = case.get()
+  r.content == case.content or die('get got bad data')
+  got = r.headers['Content-Type']
+  got == correct or die('got bad content type for extension "%s": "%s"' % (ext, got))
+  ok('got correct content type for %s: %s' % (ext, got))

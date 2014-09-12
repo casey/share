@@ -1,7 +1,7 @@
 share
 =====
 
-Data sharing service. So broken right now.
+Data sharing service.
 
 [Test instance here.](http://rodarmor-share.appspot.com)
 
@@ -14,17 +14,3 @@ API
 `GET /KEY` Will return the given data.
 
 `GET /KEY.EXT` Will return the given data with a content type appropriate for the given EXT. If EXT is "sniff", it will attempt to automatically detect the MIME type of the data.
-
-
-Quirks
-------
-
-Lots!
-
-
-TODO
-----
-
-* make sure arbitrary data/images/video/audio/test display correctly in the browser, bytes download
-* write a better readme
-* deploy

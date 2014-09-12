@@ -13,7 +13,7 @@ type response_t struct {
 }
 
 func (response response_t) finish() {
-  if appengine.IsDevAppServer() {
+  if false && appengine.IsDevAppServer() {
     debug.PrintStack()
   }
   panic(response)

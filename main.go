@@ -5,9 +5,10 @@ import "fmt"
 import "net/http"
 import "regexp"
 
-var path_re = regexp.MustCompile(`^/([0-9a-f]{64})([.][0-9a-z_.-]+)?$`)
-
+var   path_re              = regexp.MustCompile(`^/([0-9a-f]{64})([.][0-9a-z_.-]+)?$`)
 const maximumContentLength = 128
+const license              = "Anyone may do anything with this."
+const warranty             = `"AS IS" WITH NO WARRANTY OF ANY KIND EXPRESS OR IMPLIED.`
 
 func init() {
   http.HandleFunc("/", handler)
@@ -38,8 +39,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
       response.contentType = `text/plain; charset="utf-8"`
     }
 
-    w.Header().Set("License", "Anyone may do anything with this.")
-    w.Header().Set("Warranty", `"AS IS" WITH NO WARRANTY OF ANY KIND EXPRESS OR IMPLIED.`)
+    w.Header().Set("License", license)
+    w.Header().Set("Warranty", warranty)
     w.Header().Set("Access-Control-Allow-Origin", "*")
     w.Header().Set("Content-Type", response.contentType)
     w.WriteHeader(response.status.number())
@@ -60,12 +61,14 @@ func get(r *http.Request) {
   pointer, e := fetch(c, match.hash())
   check(e)
   ensure(pointer != nil, http.StatusNotFound)
-  body(http.StatusOK, string(*pointer), "application/octet-stream")
+  print(match.extension())
+  body(http.StatusOK, string(*pointer), getContentType(match.extension(), *pointer))
 }
 
 func put(r *http.Request) {
   c := appengine.NewContext(r)
   match := matchPath(r.URL.Path)
+  ensure(r.Header.Get("License") == license, http.StatusForbidden)
   ensure(match != nil, http.StatusForbidden)
   ensure(match.extension() == "", http.StatusForbidden)
   ensure(r.ContentLength >= 0, http.StatusLengthRequired)
