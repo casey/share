@@ -61,7 +61,6 @@ func get(r *http.Request) {
   pointer, e := fetch(c, match.hash())
   check(e)
   ensure(pointer != nil, http.StatusNotFound)
-  print(match.extension())
   body(http.StatusOK, string(*pointer), getContentType(match.extension(), *pointer))
 }
 

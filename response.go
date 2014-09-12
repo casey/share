@@ -1,7 +1,6 @@
 package app
 
 import "fmt"
-import "runtime/debug"
 import "net/http"
 import "appengine"
 
@@ -13,9 +12,6 @@ type response_t struct {
 }
 
 func (response response_t) finish() {
-  if false && appengine.IsDevAppServer() {
-    debug.PrintStack()
-  }
   panic(response)
 }
 
