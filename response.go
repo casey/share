@@ -1,34 +1,40 @@
 package app
 
-import "errors"
+import "fmt"
+import "runtime/debug"
+import "net/http"
+import "appengine"
 
 type response_t struct {
-  err         error
+  why         string
   status      status_t
   body        string
   contentType string
 }
 
 func (response response_t) finish() {
+  if appengine.IsDevAppServer() {
+    debug.PrintStack()
+  }
   panic(response)
 }
 
-func empty(status status_t) {
-  response_t{nil, status, "", ""}.finish()
+func status(status status_t) {
+  response_t{"status only response", status, "", ""}.finish()
 }
 
-func full(status status_t, body string, contentType string) {
-  response_t{nil, status, body, contentType}.finish()
+func body(status status_t, body string, contentType string) {
+  response_t{"response with body", status, body, contentType}.finish()
 }
 
 func ensure(condition bool, status status_t) {
   if !condition {
-    response_t{errors.New("ensure condition false"), status, "", ""}.finish()
+    response_t{"ensure condition false", status, "", ""}.finish()
   }
 }
 
 func check(e error) {
   if e != nil {
-    panic(e)
+    response_t{fmt.Sprintf("check failed: %v", e), http.StatusInternalServerError, "", ""}.finish()
   }
 }

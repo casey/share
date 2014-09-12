@@ -23,8 +23,7 @@ func makeDatastoreKey(c appengine.Context, key string) *datastore.Key {
 }
 
 func shared(c appengine.Context, key string) (bool, error) {
-  datastoreKey := makeDatastoreKey(c, key)
-  query := datastore.NewQuery("data").KeysOnly().Filter("__key__ =", datastoreKey)
+  query := datastore.NewQuery("data").KeysOnly().Filter("__key__ =", makeDatastoreKey(c, key))
   count, e := query.Count(c)
   return count > 0, e
 }
@@ -33,17 +32,13 @@ func share(c appengine.Context, key string, data []byte) error {
   if !hashOK(key, data) {
     return errors.New("hash doesn't match")
   }
-
-  datastoreKey := makeDatastoreKey(c, key)
-  entity := entity{data}
-  _, e := datastore.Put(c, datastoreKey, &entity)
+  _, e := datastore.Put(c, makeDatastoreKey(c, key), &entity{data})
   return e
 }
 
 func fetch(c appengine.Context, key string) (*[]byte, error) {
-  datastoreKey := makeDatastoreKey(c, key)
   entity := entity{}
-  e := datastore.Get(c, datastoreKey, &entity)
+  e := datastore.Get(c, makeDatastoreKey(c, key), &entity)
   if e == datastore.ErrNoSuchEntity {
     return nil, nil
   } else if e != nil {

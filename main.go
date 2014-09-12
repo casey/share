@@ -24,6 +24,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
       response.status = http.StatusInternalServerError
     }
 
+    if response.why != "" {
+      c.Infof("handler: why: %v", response.why)
+    }
+
     if response.status.mustNotIncludeMessageBody(r.Method) {
       response.body = "\n"
     } else if response.body == "" && response.contentType == "" {
@@ -44,7 +48,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
   switch r.Method {
   case "GET": get(r)
   case "PUT": put(r)
-  default:     empty(http.StatusMethodNotAllowed)
+  default:    status(http.StatusMethodNotAllowed)
   }
 }
 
@@ -55,7 +59,7 @@ func get(r *http.Request) {
   pointer, e := fetch(c, match.hash())
   check(e)
   ensure(pointer != nil, http.StatusNotFound)
-  full(http.StatusOK, string(*pointer), "application/octet-stream")
+  body(http.StatusOK, string(*pointer), "application/octet-stream")
 }
 
 func put(r *http.Request) {
@@ -70,9 +74,11 @@ func put(r *http.Request) {
   check(e)
   ensure(int64(n) == r.ContentLength, http.StatusInternalServerError)
   ensure(hashOK(match.hash(), buffer), http.StatusForbidden)
-  s, e := shared(c, match.hash())
+  shared, e := shared(c, match.hash())
   check(e)
-  ensure(s, http.StatusOK)
+  if shared {
+    status(http.StatusOK)
+  }
   check(share(c, match.hash(), buffer))
-  empty(http.StatusCreated)
+  status(http.StatusCreated)
 }
