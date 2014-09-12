@@ -39,7 +39,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
     }
 
     w.Header().Set("License", "Anyone may do anything with this.")
-    w.Header().Set("Warranty", `THIS IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND EXPRESS OR IMPLIED.`)
+    w.Header().Set("Warranty", `"AS IS" WITH NO WARRANTY OF ANY KIND EXPRESS OR IMPLIED.`)
+    w.Header().Set("Access-Control-Allow-Origin", "*")
     w.Header().Set("Content-Type", response.contentType)
     w.WriteHeader(response.status.number())
     w.Write([]byte(response.body))

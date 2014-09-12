@@ -20,3 +20,11 @@ Quirks
 ------
 
 Lots!
+
+
+TODO
+----
+
+* make sure arbitrary data/images/video/audio/test display correctly in the browser, bytes download
+* write a better readme
+* deploy

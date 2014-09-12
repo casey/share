@@ -23,14 +23,40 @@ r = requests.get(endpoint)
 r.status_code == 200 or die('index not being served')
 ok('index retrieved')
 
+created = 0
+
 for _ in range(10):
   good_hex, good_bytes = good_case()
   url = "%s/%s" % (endpoint, good_hex)
 
   r = requests.put(url, data=good_bytes)
+  if r.status_code == 201:
+    created += 1
   r.status_code == 201 or r.status_code == 200 or die('put failed with status: %s (url: %s)' % (r.status_code, url))
   ok('put succeeded: %s' % url)
 
   r = requests.get(url)
   r.status_code == 200 or die('tried to get data but got status code: %s' % r.status_code)
   ok('get suceeeded')
+
+created > 0 or die('suspicious creation count: %s' % created)
+
+# test non-hash get and set are just ignored
+# test empty string get and set
+# test test too large
+# test good
+# test not good
+# test without license
+# test some kind of content sniffing
+# test get with no ext is application/octet-stream
+# test get with .txt is text/plain utf8
+# test get with .html is html
+# this with .sniff is a GIF: '4749463839610100010000000021F904010A0001002C00000000010001000002024C01003B'
+# this with .sniff is text: 'hello'
+
+def case(*, length=None, ext='', good=True, data=None, license=True):
+  # too large not okay
+  # good always okay, not good not always okay
+  # warranty always served
+  # license always served
+  # access control allow origin always '*'
