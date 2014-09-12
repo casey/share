@@ -55,44 +55,37 @@ class TestCase:
     return r
 
 # test good
-for i in range(5):
-  case = TestCase(length=0 if i == 0 else None) # test empty body at least once
-  r = case.put()
-  if i == 0:
-    r.status_code == 200 or die('put failed: %s: %s' % (r.status_code, r.url))
-  else:
-    r.status_code == 201 or die('put failed: %s' % r.status_code)
-  r = case.get()
-  r.status_code == 200 or die('get failed: %s' % r.status_code)
-  r.content == case.content or die('get got bad data')
-  ok('%s' % r.url)
+case = TestCase()
+r = case.put()
+r.status_code == 201 or die('put failed: %s' % r.status_code)
+r = case.get()
+r.status_code == 200 or die('get failed: %s' % r.status_code)
+r.content == case.content or die('get got bad data')
+ok('%s' % r.url)
 
 # test bad checksum
-for _ in range(5):
-  case = TestCase(good=False, length=0 if i == 0 else None)
-  r = case.put()
-  r.status_code == 403 or die('bad put not 403: %s' % r.status_code)
-  r = case.get()
-  r.status_code == 404 or die('bad get not 404: %s' % r.status_code)
-  ok('bad checksum rejected')
+case = TestCase(good=False)
+r = case.put()
+r.status_code == 403 or die('bad put not 403: %s' % r.status_code)
+r = case.get()
+r.status_code == 404 or die('bad get not 404: %s' % r.status_code)
+ok('bad checksum rejected')
 
 # test too long
-for _ in range(5):
-  case = TestCase(length=maximumContentLength + random.randint(1, 1000))
-  r = case.put()
-  r.status_code == 413 or die('long put not 413: %s' % r.status_code)
-  r = case.get()
-  r.status_code == 404 or die('bad get not 404: %s' % r.status_code)
-  ok('too much data rejected')
+case = TestCase(length=maximumContentLength + random.randint(1, 1000))
+r = case.put()
+r.status_code == 413 or die('long put not 413: %s' % r.status_code)
+r = case.get()
+r.status_code == 404 or die('bad get not 404: %s' % r.status_code)
+ok('too much data rejected')
 
 # test bad license
-for _ in range(5):
-  case = TestCase(license="Some random conditions.")
-  r = case.put()
-  r.status_code == 403 or die('put with bad license not 403: %s' % r.status_code)
-  r = case.get()
-  r.status_code == 404 or die('bad get not 404: %s' % r.status_code)
-  ok('bad license rejected')
+case = TestCase(license="Some random conditions.")
+r = case.put()
+r.status_code == 403 or die('put with bad license not 403: %s' % r.status_code)
+r = case.get()
+r.status_code == 404 or die('bad get not 404: %s' % r.status_code)
+ok('bad license rejected')
 
 extensions = {
   '':       'application/octet-stream',
@@ -110,4 +103,4 @@ for ext, correct in extensions.items():
   r.content == case.content or die('get got bad data')
   got = r.headers['Content-Type']
   got == correct or die('got bad content type for extension "%s": "%s"' % (ext, got))
-  ok('got correct content type for %s: %s' % (ext, got))
+  ok('got correct content type for extension "%s": %s' % (ext, got))
