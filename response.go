@@ -4,7 +4,7 @@ import "errors"
 
 type response_t struct {
   err         error
-  status      status_t 
+  status      status_t
   body        string
   contentType string
 }
@@ -18,7 +18,7 @@ func empty(status status_t) {
 }
 
 func full(status status_t, body string, contentType string) {
-  response_t{nil, status, body , contentType}.finish()
+  response_t{nil, status, body, contentType}.finish()
 }
 
 func ensure(condition bool, status status_t) {

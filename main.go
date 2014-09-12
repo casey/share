@@ -6,6 +6,7 @@ import "net/http"
 import "regexp"
 
 var path_re = regexp.MustCompile(`^/([0-9a-f]{64})([.][0-9a-z_.-]+)?$`)
+
 const maximumContentLength = 128
 
 func init() {
@@ -22,7 +23,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
       c.Errorf("handler: relic was not response: %v", relic)
       response.status = http.StatusInternalServerError
     }
-    
+
     if response.status.mustNotIncludeMessageBody(r.Method) {
       response.body = "\n"
     } else if response.body == "" && response.contentType == "" {
@@ -41,9 +42,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
   }()
 
   switch r.Method {
-    case "GET": get(r)
-    case "PUT": put(r)
-    default:    empty(http.StatusMethodNotAllowed)
+  case "GET": get(r)
+  case "PUT": put(r)
+  default:     empty(http.StatusMethodNotAllowed)
   }
 }
 
