@@ -2,7 +2,6 @@ package app
 
 import "fmt"
 import "net/http"
-import "appengine"
 
 type response_t struct {
   why         string
