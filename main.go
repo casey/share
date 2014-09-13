@@ -1,11 +1,12 @@
 package app
 
 import "appengine"
-import "fmt"
 import "net/http"
 import "regexp"
 
-var   path_re              = regexp.MustCompile(`^/([0-9a-f]{64})([.][0-9a-z_.-]+)?$`)
+import . "flotilla"
+
+var   path_re              = regexp.MustCompile(`^/(?P<hash>[0-9a-f]{64})(?P<extension>[.][0-9a-z_.-]+)?$`)
 const maximumContentLength = 128
 const license              = "Anyone may do anything with this."
 const warranty             = `"AS IS" WITH NO WARRANTY OF ANY KIND EXPRESS OR IMPLIED.`
@@ -15,73 +16,42 @@ func init() {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-  defer func() {
-    c := appengine.NewContext(r)
-    relic := recover()
-    response, ok := relic.(response_t)
-
-    if !ok {
-      c.Errorf("handler: relic was not response: %v", relic)
-      response.status = http.StatusInternalServerError
-    }
-
-    if response.why != "" {
-      c.Infof("handler: why: %v", response.why)
-    }
-
-    if response.status.mustNotIncludeMessageBody(r.Method) {
-      response.body = "\n"
-    } else if response.body == "" && response.contentType == "" {
-      response.body = fmt.Sprintf("%v %v\n", response.status.number(), response.status.text())
-    }
-
-    if response.contentType == "" {
-      response.contentType = `text/plain; charset="utf-8"`
-    }
-
-    w.Header().Set("License", license)
-    w.Header().Set("Warranty", warranty)
-    w.Header().Set("Access-Control-Allow-Origin", "*")
-    w.Header().Set("Content-Type", response.contentType)
-    w.WriteHeader(response.status.number())
-    w.Write([]byte(response.body))
-  }()
-
+  defer Respond(w, r)
   switch r.Method {
   case "GET": get(r)
   case "PUT": put(r)
-  default:    status(http.StatusMethodNotAllowed)
+  default:    Status(http.StatusMethodNotAllowed)
   }
 }
 
 func get(r *http.Request) {
   c := appengine.NewContext(r)
-  match := matchPath(r.URL.Path)
-  ensure(match != nil, http.StatusForbidden)
-  pointer, e := fetch(c, match.hash())
-  check(e)
-  ensure(pointer != nil, http.StatusNotFound)
-  body(http.StatusOK, string(*pointer), getContentType(match.extension(), *pointer))
+  match := Components(path_re, r.URL.Path)
+  Ensure(match != nil, http.StatusForbidden)
+  pointer, e := fetch(c, match["hash"])
+  Check(e)
+  Ensure(pointer != nil, http.StatusNotFound)
+  Body(http.StatusOK, string(*pointer), sniff(match["extension"], *pointer))
 }
 
 func put(r *http.Request) {
   c := appengine.NewContext(r)
-  match := matchPath(r.URL.Path)
-  ensure(r.Header.Get("License") == license, http.StatusForbidden)
-  ensure(match != nil, http.StatusForbidden)
-  ensure(match.extension() == "", http.StatusForbidden)
-  ensure(r.ContentLength >= 0, http.StatusLengthRequired)
-  ensure(r.ContentLength <= maximumContentLength, http.StatusRequestEntityTooLarge)
+  match := Components(path_re, r.URL.Path)
+  Ensure(r.Header.Get("License") == license, http.StatusForbidden)
+  Ensure(match != nil, http.StatusForbidden)
+  Ensure(match["extension"] == "", http.StatusForbidden)
+  Ensure(r.ContentLength >= 0, http.StatusLengthRequired)
+  Ensure(r.ContentLength <= maximumContentLength, http.StatusRequestEntityTooLarge)
   buffer := make([]byte, r.ContentLength)
   n, e := r.Body.Read(buffer)
-  check(e)
-  ensure(int64(n) == r.ContentLength, http.StatusInternalServerError)
-  ensure(hashOK(match.hash(), buffer), http.StatusForbidden)
-  shared, e := shared(c, match.hash())
-  check(e)
+  Check(e)
+  Ensure(int64(n) == r.ContentLength, http.StatusInternalServerError)
+  Ensure(hashOK(match["hash"], buffer), http.StatusForbidden)
+  shared, e := shared(c, match["hash"])
+  Check(e)
   if shared {
-    status(http.StatusOK)
+    Status(http.StatusOK)
   }
-  check(share(c, match.hash(), buffer))
-  status(http.StatusCreated)
+  Check(share(c, match["hash"], buffer))
+  Status(http.StatusCreated)
 }
