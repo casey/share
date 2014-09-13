@@ -10,7 +10,8 @@ format:
 
 lint:
 	go vet
-	@golint | sed "/don't use underscores/d"
+	@echo go lint
+	@golint | sed -E "/don't use underscores|should not use dot imports/d"
 
 test:
 	./test http://localhost:8080
