@@ -6,7 +6,8 @@ import "regexp"
 
 import . "flotilla"
 
-var   path_re              = regexp.MustCompile(`^/(?P<hash>[0-9a-f]{64})(?P<extension>[.][0-9a-z_.-]+)?$`)
+var   get_re               = regexp.MustCompile(`^/(?P<hash>[0-9a-f]{64})(?P<extension>[.][0-9a-z_.-]+)?$`)
+var   put_re               = regexp.MustCompile(`^/(?P<hash>[0-9a-f]{64})$`)
 const maximumContentLength = 128
 const license              = "Anyone may do anything with this."
 const warranty             = `"AS IS" WITH NO WARRANTY OF ANY KIND EXPRESS OR IMPLIED.`
@@ -21,7 +22,7 @@ func options(r *http.Request) {
 
 func get(r *http.Request) {
   c := appengine.NewContext(r)
-  match := Components(path_re, r.URL.Path)
+  match := Components(get_re, r.URL.Path)
   Ensure(match != nil, http.StatusForbidden)
   pointer, e := fetch(c, match["hash"])
   Check(e)
@@ -31,10 +32,9 @@ func get(r *http.Request) {
 
 func put(r *http.Request) {
   c := appengine.NewContext(r)
-  match := Components(path_re, r.URL.Path)
+  match := Components(put_re, r.URL.Path)
   Ensure(r.Header.Get("License") == license, http.StatusForbidden)
   Ensure(match != nil, http.StatusForbidden)
-  Ensure(match["extension"] == "", http.StatusForbidden)
   Ensure(r.ContentLength >= 0, http.StatusLengthRequired)
   Ensure(r.ContentLength <= maximumContentLength, http.StatusRequestEntityTooLarge)
   buffer := make([]byte, r.ContentLength)
