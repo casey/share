@@ -12,16 +12,11 @@ const license              = "Anyone may do anything with this."
 const warranty             = `"AS IS" WITH NO WARRANTY OF ANY KIND EXPRESS OR IMPLIED.`
 
 func init() {
-  http.HandleFunc("/", handler)
+  Handle("/").Options(options).Get(get).Put(put)
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-  defer Respond(w, r)
-  switch r.Method {
-  case "GET": get(r)
-  case "PUT": put(r)
-  default:    Status(http.StatusMethodNotAllowed)
-  }
+func options(r *http.Request) {
+  Status(http.StatusOK)
 }
 
 func get(r *http.Request) {
