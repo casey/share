@@ -1,7 +1,7 @@
 share
 =====
 
-Content-addressable storage service.
+##### Content-addressable sharing service
 
 [Test instance here.](http://rodarmor-share.appspot.com)
 
