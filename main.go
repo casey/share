@@ -10,7 +10,6 @@ var   get_re               = regexp.MustCompile(`^/(?P<hash>[0-9a-f]{64})(?P<ext
 var   put_re               = regexp.MustCompile(`^/(?P<hash>[0-9a-f]{64})$`)
 const maximumContentLength = 128
 const license              = "Anyone may do anything with this."
-const warranty             = `"AS IS" WITH NO WARRANTY OF ANY KIND EXPRESS OR IMPLIED.`
 
 func init() {
   Handle("/").Options(options).Get(get).Put(put)
