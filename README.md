@@ -15,6 +15,13 @@ KEYs match `/[0-9a-f]{64}/`.
 * `GET /KEY` -> Get the shared data whose SHA-256 hash is equal to KEY.
 * `GET /KEY.EXT` -> Same as above, but sets the Content-Type header appropriately for the given EXT. If EXT is "sniff", Share will try to guess a Content-Type according to the [WHATWG MIME Sniffing standard](http://mimesniff.spec.whatwg.org).
 
+```
+> curl -X PUT http://rodarmor-share.appspot.com/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 --header "License: Anyone may do anything with this." --data hello
+201 CREATED
+> curl -X GET http://rodarmor-share.appspot.com/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824
+hello
+```
+
 
 About
 -----
